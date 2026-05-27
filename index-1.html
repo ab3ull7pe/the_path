@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>The Path</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0908;
+      --surface: #111009;
+      --surface2: #1a1812;
+      --border: #2a2620;
+      --border-glow: #5a4a2a;
+      --gold: #c9a84c;
+      --gold-dim: #7a6230;
+      --gold-bright: #e8c97a;
+      --ash: #8a8070;
+      --ash-dim: #4a4438;
+      --text: #d4c9b0;
+      --text-dim: #7a7060;
+      --white: #f0ead8;
+      --danger: #8a3a2a;
+      --success: #2a5a3a;
+      --radius: 4px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 16px;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    /* Nav */
+    .nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 0 max(12px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--ash-dim);
+      font-family: 'Cinzel', serif;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      padding: 4px 16px;
+      transition: color 0.2s;
+    }
+
+    .nav-btn.active { color: var(--gold); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* Pages */
+    .page { display: none; padding: 24px 16px 100px; max-width: 480px; margin: 0 auto; }
+    .page.active { display: block; animation: fadeUp 0.3s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-top: 16px;
+    }
+
+    .page-header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .page-header .big {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      color: var(--white);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .page-header .sub {
+      font-style: italic;
+      color: var(--ash);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--gold-dim);
+    }
+
+    /* Level card */
+    .level-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    }
+
+    .level-number {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      color: var(--gold-dim);
+      margin-bottom: 4px;
+    }
+
+    .level-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .level-name {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      color: var(--white);
+      font-weight: 700;
+    }
+
+    .level-progress-text {
+      font-size: 12px;
+      color: var(--ash);
+      font-style: italic;
+    }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 2px;
+      height: 4px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    .progress-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* Task list */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .task-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .task-item.done {
+      border-color: var(--gold-dim);
+      background: rgba(90, 74, 42, 0.15);
+    }
+
+    .task-item.done .task-name { color: var(--ash); }
+
+    .task-icon {
+      font-size: 18px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .task-info { flex: 1; min-width: 0; }
+
+    .task-name {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+
+    .task-req {
+      font-size: 12px;
+      color: var(--ash);
+      font-style: italic;
+    }
+
+    .task-input-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .task-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      padding: 6px 10px;
+      width: 70px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .task-input:focus { border-color: var(--gold-dim); }
+    .task-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .task-unit {
+      font-size: 11px;
+      color: var(--ash-dim);
+      font-style: italic;
+      min-width: 24px;
+    }
+
+    .log-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--gold-dim);
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .log-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+    .done-badge {
+      color: var(--gold);
+      font-size: 18px;
+    }
+
+    /* Level up banner */
+    .levelup-banner {
+      display: none;
+      background: linear-gradient(135deg, #1a1408, #2a2010);
+      border: 1px solid var(--gold-dim);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 24px;
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .levelup-banner.show { display: block; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(201, 168, 76, 0.1); }
+      50% { box-shadow: 0 0 40px rgba(201, 168, 76, 0.25); }
+    }
+
+    .levelup-banner h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      color: var(--gold-bright);
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+
+    .levelup-banner p {
+      color: var(--ash);
+      font-style: italic;
+      font-size: 14px;
+    }
+
+    .levelup-btn {
+      margin-top: 16px;
+      background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+      border: none;
+      border-radius: var(--radius);
+      color: var(--bg);
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      padding: 10px 24px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    /* Sleep page */
+    .sleep-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sleep-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2a4a6a, transparent);
+    }
+
+    .title-display {
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .title-label {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--ash-dim);
+      margin-bottom: 8px;
+    }
+
+    .title-name {
+      font-family: 'Cinzel', serif;
+      font-size: 26px;
+      color: var(--gold-bright);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      min-height: 36px;
+    }
+
+    .title-name.none { color: var(--ash-dim); font-size: 16px; font-style: italic; font-family: 'Crimson Pro', serif; }
+
+    .streak-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .streak-num {
+      font-family: 'Cinzel', serif;
+      font-size: 48px;
+      color: var(--gold);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .streak-info { text-align: left; }
+    .streak-info .big { font-family: 'Cinzel', serif; font-size: 13px; color: var(--white); letter-spacing: 0.1em; }
+    .streak-info .small { font-size: 12px; color: var(--ash); font-style: italic; }
+
+    /* Next title progress */
+    .next-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .next-title-row span { font-size: 12px; color: var(--ash); font-style: italic; }
+    .next-title-row strong { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold-dim); }
+
+    /* Check-in form */
+    .checkin-form {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .checkin-form h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--gold-dim);
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .form-label span {
+      display: block;
+      font-size: 11px;
+      color: var(--ash-dim);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .form-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Crimson Pro', serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 120px;
+      text-align: center;
+    }
+
+    .form-input:focus { border-color: var(--gold-dim); }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--border-glow);
+      border-radius: 2px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all 0.2s;
+    }
+
+    .custom-checkbox.checked {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+    }
+
+    .custom-checkbox.checked::after { content: '✓'; color: var(--bg); font-size: 12px; font-weight: bold; }
+
+    .checkbox-label { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .checkbox-label span { display: block; font-size: 11px; color: var(--ash-dim); font-style: italic; }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1a2a1a, #2a3a2a);
+      border: 1px solid #3a5a3a;
+      border-radius: var(--radius);
+      color: #8aaa8a;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    .submit-btn:hover { border-color: #5a8a5a; color: #aacaaa; }
+    .submit-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Titles ladder */
+    .titles-ladder { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+    .title-rung {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .title-rung.earned {
+      border-color: var(--gold-dim);
+      background: rgba(90, 74, 42, 0.1);
+    }
+
+    .title-rung.current {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, 0.08);
+      box-shadow: 0 0 12px rgba(201, 168, 76, 0.1);
+    }
+
+    .rung-days {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--ash-dim);
+      width: 40px;
+      flex-shrink: 0;
+    }
+
+    .rung-name {
+      flex: 1;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      color: var(--ash-dim);
+    }
+
+    .title-rung.earned .rung-name { color: var(--gold-dim); }
+    .title-rung.current .rung-name { color: var(--gold-bright); }
+
+    .rung-status { font-size: 14px; }
+
+    /* Stats page */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      color: var(--gold);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--ash-dim);
+      font-family: 'Cinzel', serif;
+    }
+
+    /* History */
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      flex-shrink: 0;
+    }
+
+    .history-text { flex: 1; font-size: 13px; color: var(--text); }
+    .history-date { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--gold-dim);
+      border-radius: var(--radius);
+      padding: 10px 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 200;
+      white-space: nowrap;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Warning */
+    .warning-box {
+      background: rgba(138, 58, 42, 0.1);
+      border: 1px solid #5a2a1a;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #c08070;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+
+    .checkin-done {
+      text-align: center;
+      padding: 20px;
+      color: var(--ash);
+      font-style: italic;
+      font-size: 14px;
+    }
+
+    .checkin-done strong {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--gold-dim);
+      font-style: normal;
+      margin-bottom: 6px;
+    }
+
+    /* Ornament */
+    .ornament {
+      text-align: center;
+      color: var(--gold-dim);
+      font-size: 18px;
+      letter-spacing: 8px;
+      margin: 8px 0;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Pages -->
+<div id="page-path" class="page active">
+  <div class="page-header">
+    <h1>The Path</h1>
+    <div class="big" id="level-display">Level 1</div>
+    <div class="sub" id="level-sub">Begin the ascent</div>
+  </div>
+
+  <div id="levelup-banner" class="levelup-banner">
+    <div class="ornament">✦ ✦ ✦</div>
+    <h2>LEVEL COMPLETE</h2>
+    <p id="levelup-msg">You have endured. Advance.</p>
+    <button class="levelup-btn" onclick="advanceLevel()">ADVANCE TO NEXT LEVEL</button>
+  </div>
+
+  <div class="level-card">
+    <div class="level-number" id="task-header">TRIALS OF LEVEL 1</div>
+    <div class="level-title-row">
+      <div class="progress-label" id="tasks-done-label">0 / 11 complete</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="task-progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="task-list" id="task-list"></div>
+</div>
+
+<div id="page-vigil" class="page">
+  <div class="page-header">
+    <h1>The Vigil</h1>
+    <div class="big">Dawn Watch</div>
+    <div class="sub">Sleep is the first discipline</div>
+  </div>
+
+  <div class="sleep-card">
+    <div class="title-display">
+      <div class="title-label">CURRENT TITLE</div>
+      <div class="title-name" id="current-title-name">—</div>
+    </div>
+    <div class="streak-display">
+      <div class="streak-num" id="streak-num">0</div>
+      <div class="streak-info">
+        <div class="big">DAY STREAK</div>
+        <div class="small" id="streak-sub">No streak yet</div>
+      </div>
+    </div>
+    <div class="next-title-row">
+      <span id="next-title-label">Next: —</span>
+      <strong id="next-title-days">— days away</strong>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="sleep-progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="checkin-area"></div>
+
+  <div class="divider"><span>THE LADDER</span></div>
+
+  <div class="titles-ladder" id="titles-ladder"></div>
+</div>
+
+<div id="page-record" class="page">
+  <div class="page-header">
+    <h1>The Record</h1>
+    <div class="big">Chronicle</div>
+    <div class="sub">What has been done cannot be undone</div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val" id="stat-level">1</div>
+      <div class="stat-lbl">CURRENT LEVEL</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-streak">0</div>
+      <div class="stat-lbl">SLEEP STREAK</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-levels-done">0</div>
+      <div class="stat-lbl">LEVELS PASSED</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="stat-checkins">0</div>
+      <div class="stat-lbl">VIGIL KEPT</div>
+    </div>
+  </div>
+
+  <div class="divider"><span>RECENT DEEDS</span></div>
+
+  <div id="history-list"></div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('path', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+    </svg>
+    THE PATH
+  </button>
+  <button class="nav-btn" onclick="showPage('vigil', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728l.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707m12.728-12.728l.707-.707M12 7a5 5 0 000 10 5 5 0 000-10z"/>
+    </svg>
+    THE VIGIL
+  </button>
+  <button class="nav-btn" onclick="showPage('record', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+    </svg>
+    CHRONICLE
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const TASKS = [
+  { id: 'writing',     name: 'Writing',     icon: '✍️',  type: 'time',  unit: 'min' },
+  { id: 'reading',     name: 'Reading',     icon: '📖',  type: 'time',  unit: 'min' },
+  { id: 'drawing',     name: 'Drawing',     icon: '🎨',  type: 'time',  unit: 'min' },
+  { id: 'class',       name: 'Class',       icon: '🎓',  type: 'time',  unit: 'min' },
+  { id: 'plank',       name: 'Plank',       icon: '🧘',  type: 'time',  unit: 'min' },
+  { id: 'photography', name: 'Photography', icon: '📷',  type: 'count', unit: 'shots' },
+  { id: 'pushups',     name: 'Pushups',     icon: '💪',  type: 'count', unit: 'reps' },
+  { id: 'pullups',     name: 'Pullups',     icon: '🏋️',  type: 'count', unit: 'reps' },
+  { id: 'situps',      name: 'Situps',      icon: '🔥',  type: 'count', unit: 'reps' },
+  { id: 'squats',      name: 'Squats',      icon: '⚡',  type: 'count', unit: 'reps' },
+  { id: 'chess',       name: 'Chess',       icon: '♟️',  type: 'count', unit: 'games' },
+];
+
+const TITLES = [
+  { days: 7,  name: 'The Stirring' },
+  { days: 14, name: 'The Wakeful' },
+  { days: 21, name: 'Dawn Ascetic' },
+  { days: 28, name: 'Keeper of the Hour' },
+  { days: 35, name: 'The Unbroken' },
+  { days: 42, name: 'Vow of the Morning' },
+  { days: 49, name: 'Silent Vigil' },
+];
+
+const LEVEL_QUOTES = [
+  'The stone does not resist the chisel. Neither shall you resist the path.',
+  'Each repetition is a prayer. Each minute, an offering.',
+  'The monk does not count the days. The monk makes the days count.',
+  'Pain is the teacher. Discipline is the student.',
+  'To master oneself is to master all things.',
+  'The path does not end. It only deepens.',
+  'Silence is not empty. It is full of answers.',
+];
+
+function getState() {
+  const raw = localStorage.getItem('thepath_v1');
+  if (raw) return JSON.parse(raw);
+  return {
+    level: 1,
+    tasksDone: {},       // { taskId: amount } for current level
+    history: [],
+    sleepStreak: 0,
+    sleepLastCheckin: null,  // ISO date string YYYY-MM-DD
+    sleepTotalCheckins: 0,
+    levelsPassed: 0,
+  };
+}
+
+function saveState(s) {
+  localStorage.setItem('thepath_v1', JSON.stringify(s));
+}
+
+function getRequired(level) {
+  return level * 2;
+}
+
+function getTitleForStreak(streak) {
+  let earned = null;
+  for (const t of TITLES) {
+    if (streak >= t.days) earned = t;
+  }
+  return earned;
+}
+
+function getNextTitle(streak) {
+  for (const t of TITLES) {
+    if (streak < t.days) return t;
+  }
+  return null;
+}
+
+function today() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+function isStreakBroken(lastCheckin) {
+  if (!lastCheckin) return false;
+  const last = new Date(lastCheckin);
+  const now = new Date();
+  const diffDays = Math.floor((now - last) / 86400000);
+  return diffDays >= 2;
+}
+
+// ─── PAGES ───────────────────────────────────────────────────────────────────
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'path') renderPath();
+  if (name === 'vigil') renderVigil();
+  if (name === 'record') renderRecord();
+}
+
+// ─── PATH PAGE ───────────────────────────────────────────────────────────────
+
+function renderPath() {
+  const s = getState();
+  const req = getRequired(s.level);
+  const done = Object.keys(s.tasksDone).length;
+
+  document.getElementById('level-display').textContent = 'Level ' + s.level;
+  document.getElementById('level-sub').textContent = LEVEL_QUOTES[(s.level - 1) % LEVEL_QUOTES.length];
+  document.getElementById('task-header').textContent = 'TRIALS OF LEVEL ' + s.level;
+  document.getElementById('tasks-done-label').textContent = done + ' / ' + TASKS.length + ' complete';
+  document.getElementById('task-progress-bar').style.width = ((done / TASKS.length) * 100) + '%';
+
+  const allDone = done === TASKS.length;
+  const banner = document.getElementById('levelup-banner');
+  if (allDone) {
+    banner.classList.add('show');
+    document.getElementById('levelup-msg').textContent =
+      'Every trial passed. Level ' + s.level + ' is yours. Advance when ready.';
+  } else {
+    banner.classList.remove('show');
+  }
+
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+
+  TASKS.forEach(task => {
+    const isDone = s.tasksDone.hasOwnProperty(task.id);
+    const amount = s.tasksDone[task.id];
+    const div = document.createElement('div');
+    div.className = 'task-item' + (isDone ? ' done' : '');
+
+    const unitLabel = task.type === 'time'
+      ? (req === 1 ? 'min' : 'min')
+      : task.unit;
+
+    div.innerHTML = `
+      <div class="task-icon">${task.icon}</div>
+      <div class="task-info">
+        <div class="task-name">${task.name.toUpperCase()}</div>
+        <div class="task-req">${isDone ? '✓ logged: ' + amount + ' ' + unitLabel : 'Required: ' + req + ' ' + unitLabel}</div>
+      </div>
+      <div class="task-input-area">
+        ${isDone
+          ? `<span class="done-badge">✦</span>`
+          : `<input class="task-input" type="number" id="inp-${task.id}" min="1" placeholder="${req}" />
+             <span class="task-unit">${unitLabel}</span>
+             <button class="log-btn" onclick="logTask('${task.id}')">LOG</button>`
+        }
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function logTask(taskId) {
+  const s = getState();
+  if (s.tasksDone.hasOwnProperty(taskId)) return;
+
+  const inp = document.getElementById('inp-' + taskId);
+  const val = parseFloat(inp.value);
+  const req = getRequired(s.level);
+
+  if (!val || val < req) {
+    showToast('Minimum ' + req + ' required');
+    return;
+  }
+
+  s.tasksDone[taskId] = val;
+  const task = TASKS.find(t => t.id === taskId);
+  s.history.unshift({
+    text: task.name + ': ' + val + ' ' + task.unit,
+    date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+  });
+  if (s.history.length > 50) s.history.pop();
+
+  saveState(s);
+  showToast(task.name + ' logged ✦');
+  renderPath();
+}
+
+function advanceLevel() {
+  const s = getState();
+  s.levelsPassed += 1;
+  s.level += 1;
+  s.tasksDone = {};
+  s.history.unshift({
+    text: '⬆ Advanced to Level ' + s.level,
+    date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+  });
+  saveState(s);
+  showToast('Level ' + s.level + ' begins');
+  renderPath();
+  renderRecord();
+}
+
+// ─── VIGIL PAGE ───────────────────────────────────────────────────────────────
+
+function renderVigil() {
+  const s = getState();
+
+  // Auto-break streak if skipped a day
+  if (isStreakBroken(s.sleepLastCheckin)) {
+    const prevTitle = getTitleForStreak(s.sleepStreak);
+    const droppedTitle = prevTitle ? dropTitle(s.sleepStreak) : null;
+    s.sleepStreak = 0;
+    if (droppedTitle !== null) s.sleepStreak = droppedTitle;
+    saveState(s);
+    showToast('Streak broken. Title lost.');
+  }
+
+  const streak = s.sleepStreak;
+  const title = getTitleForStreak(streak);
+  const nextTitle = getNextTitle(streak);
+
+  document.getElementById('streak-num').textContent = streak;
+  document.getElementById('current-title-name').textContent = title ? title.name : '—';
+  document.getElementById('current-title-name').className = 'title-name' + (title ? '' : ' none');
+
+  if (nextTitle) {
+    const daysLeft = nextTitle.days - streak;
+    document.getElementById('next-title-label').textContent = 'Next: ' + nextTitle.name;
+    document.getElementById('next-title-days').textContent = daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' away';
+    const prevMilestone = title ? title.days : 0;
+    const pct = ((streak - prevMilestone) / (nextTitle.days - prevMilestone)) * 100;
+    document.getElementById('sleep-progress-bar').style.width = Math.max(0, pct) + '%';
+  } else {
+    document.getElementById('next-title-label').textContent = 'Silent Vigil — the summit';
+    document.getElementById('next-title-days').textContent = '';
+    document.getElementById('sleep-progress-bar').style.width = '100%';
+  }
+
+  document.getElementById('streak-sub').textContent =
+    streak === 0 ? 'No streak yet' :
+    streak === 1 ? 'The path begins' :
+    'Days of unbroken dawn';
+
+  // Check-in area
+  const checkinArea = document.getElementById('checkin-area');
+  const alreadyCheckedIn = s.sleepLastCheckin === today();
+
+  if (alreadyCheckedIn) {
+    checkinArea.innerHTML = `
+      <div class="checkin-done">
+        <strong>✦ VIGIL KEPT ✦</strong>
+        The dawn has been honored today. Return tomorrow before 6:15 AM.
+      </div>`;
+  } else {
+    const now = new Date();
+    const cutoff = new Date();
+    cutoff.setHours(6, 15, 0, 0);
+    const tooLate = now > cutoff;
+
+    checkinArea.innerHTML = `
+      ${tooLate ? '<div class="warning-box">⚠ Past 6:15 AM — if you did not check in, this day is lost. You may still log for record.</div>' : ''}
+      <div class="checkin-form">
+        <h3>MORNING CHECK-IN</h3>
+        <div class="form-row">
+          <label class="form-label">
+            Bedtime
+            <span>When did you sleep last night?</span>
+          </label>
+          <input class="form-input" type="time" id="inp-bedtime" value="22:00" />
+        </div>
+        <div class="form-row">
+          <label class="form-label">
+            Wake time
+            <span>When did you actually wake?</span>
+          </label>
+          <input class="form-input" type="time" id="inp-waketime" value="06:00" />
+        </div>
+        <div class="checkbox-row">
+          <div class="custom-checkbox" id="phone-checkbox" onclick="togglePhoneCheck()"></div>
+          <div class="checkbox-label">
+            Phone was off / unused after 10 PM
+            <span>Honor system — be honest with yourself</span>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="submitCheckin()">
+          ✦ &nbsp; SEAL THE VIGIL &nbsp; ✦
+        </button>
+      </div>`;
+  }
+
+  // Titles ladder
+  const ladder = document.getElementById('titles-ladder');
+  ladder.innerHTML = '';
+  TITLES.forEach(t => {
+    const earned = streak >= t.days;
+    const isCurrent = title && title.days === t.days;
+    const div = document.createElement('div');
+    div.className = 'title-rung' + (isCurrent ? ' current' : earned ? ' earned' : '');
+    div.innerHTML = `
+      <div class="rung-days">${t.days}d</div>
+      <div class="rung-name">${t.name}</div>
+      <div class="rung-status">${isCurrent ? '✦' : earned ? '◆' : '◇'}</div>
+    `;
+    ladder.appendChild(div);
+  });
+}
+
+let phoneChecked = false;
+function togglePhoneCheck() {
+  phoneChecked = !phoneChecked;
+  const el = document.getElementById('phone-checkbox');
+  if (el) el.className = 'custom-checkbox' + (phoneChecked ? ' checked' : '');
+}
+
+function submitCheckin() {
+  const s = getState();
+  const bedtime = document.getElementById('inp-bedtime').value;
+  const waketime = document.getElementById('inp-waketime').value;
+
+  if (!bedtime || !waketime) {
+    showToast('Enter both times');
+    return;
+  }
+
+  // Calculate sleep duration
+  const [bh, bm] = bedtime.split(':').map(Number);
+  const [wh, wm] = waketime.split(':').map(Number);
+  let sleepMins = (wh * 60 + wm) - (bh * 60 + bm);
+  if (sleepMins < 0) sleepMins += 1440; // crossed midnight
+  const sleepHours = sleepMins / 60;
+
+  if (sleepHours < 8) {
+    showToast('Less than 8 hours — streak broken');
+    // Streak breaks
+    const prev = getTitleForStreak(s.sleepStreak);
+    s.sleepStreak = prev ? dropTitle(s.sleepStreak) : 0;
+    s.sleepLastCheckin = today();
+    s.sleepTotalCheckins += 1;
+    s.history.unshift({
+      text: '🌙 Vigil: ' + sleepHours.toFixed(1) + 'h sleep — streak lost',
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    });
+    saveState(s);
+    renderVigil();
+    return;
+  }
+
+  // Check wake time <= 6:00
+  const wakeOk = wh < 6 || (wh === 6 && wm === 0);
+  if (!wakeOk) {
+    showToast('Woke after 6:00 — streak broken');
+    const prev = getTitleForStreak(s.sleepStreak);
+    s.sleepStreak = prev ? dropTitle(s.sleepStreak) : 0;
+    s.sleepLastCheckin = today();
+    s.sleepTotalCheckins += 1;
+    s.history.unshift({
+      text: '🌙 Vigil: woke ' + bedtime + ' — streak lost',
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    });
+    saveState(s);
+    renderVigil();
+    return;
+  }
+
+  // All good
+  s.sleepStreak += 1;
+  s.sleepLastCheckin = today();
+  s.sleepTotalCheckins += 1;
+  const newTitle = getTitleForStreak(s.sleepStreak);
+
+  s.history.unshift({
+    text: '🌙 Vigil kept: ' + sleepHours.toFixed(1) + 'h · streak ' + s.sleepStreak,
+    date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+  });
+
+  if (newTitle && (!getTitleForStreak(s.sleepStreak - 1) || getTitleForStreak(s.sleepStreak - 1).name !== newTitle.name)) {
+    s.history.unshift({
+      text: '✦ Title earned: ' + newTitle.name,
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    });
+  }
+
+  saveState(s);
+  showToast('Vigil sealed ✦ ' + s.sleepStreak + ' days');
+  renderVigil();
+  renderRecord();
+}
+
+function dropTitle(streak) {
+  // Find the title just below current
+  const current = getTitleForStreak(streak);
+  if (!current) return 0;
+  const idx = TITLES.indexOf(current);
+  if (idx <= 0) return 0;
+  return TITLES[idx - 1].days; // Reset to start of previous tier
+}
+
+// ─── RECORD PAGE ─────────────────────────────────────────────────────────────
+
+function renderRecord() {
+  const s = getState();
+  document.getElementById('stat-level').textContent = s.level;
+  document.getElementById('stat-streak').textContent = s.sleepStreak;
+  document.getElementById('stat-levels-done').textContent = s.levelsPassed;
+  document.getElementById('stat-checkins').textContent = s.sleepTotalCheckins;
+
+  const hist = document.getElementById('history-list');
+  if (!s.history.length) {
+    hist.innerHTML = '<div class="checkin-done" style="padding:16px 0">No deeds recorded yet.<br><em>Begin the path.</em></div>';
+    return;
+  }
+  hist.innerHTML = s.history.slice(0, 30).map(h => `
+    <div class="history-item">
+      <div class="history-dot"></div>
+      <div class="history-text">${h.text}</div>
+      <div class="history-date">${h.date}</div>
+    </div>
+  `).join('');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+renderPath();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
